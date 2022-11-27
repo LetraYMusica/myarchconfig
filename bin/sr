@@ -1,0 +1,26 @@
+#!/bin/bash
+
+topicfile=$HOME/.config/sr/srspec
+tema=`cat $topicfile | grep "tema" | cut -d "=" -f2`
+mic=`cat $topicfile | grep "mic" | cut -d "=" -f2`
+aformat=`cat $topicfile | grep "aformat" | cut -d "=" -f2`
+vformat=`cat $topicfile | grep "vformat" | cut -d "=" -f2`
+dirp=$HOME/Vídeos/myrecords/$tema
+numero=`expr 1 + $(ls -d $dirp/*/ | wc -l)`
+dirh=$dirp/$tema-$numero
+
+kitty topic
+
+wait
+
+mkdir -p $dirp
+mkdir -p $dirh
+
+ffmpeg \
+-f pulse -ac 2 -ar 44100 -i 3 -map '0' $dirh/$mic.$aformat \
+-f pulse -ac 2 -ar 44100 -i 0 -map '1' $dirh/interno.$aformat \
+-f x11grab -framerate 24 -i :0.0 \
+-vcodec libx264  -preset veryfast -crf 18 \
+-acodec copy -an \
+-pix_fmt yuv420p \
+$dirh/$tema-`date +%y_%m_%d_%T`.$vformat

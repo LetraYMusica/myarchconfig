@@ -1,0 +1,44 @@
+#!/bin/bash
+
+topicfile=$HOME/.config/sr/srspec
+tema=`cat $topicfile | grep "tema" | cut -d "=" -f2`
+mic=`cat $topicfile | grep "mic=" | cut -d "=" -f2`
+aformat=`cat $topicfile | grep "aformat=" | cut -d "=" -f2`
+vformat=`cat $topicfile | grep "vformat=" | cut -d "=" -f2`
+vout=`cat $topicfile | grep "vout" | cut -d "=" -f2`
+dirp=$HOME/Vídeos/myrecords/$tema
+numero=`ls -d $dirp/*/ | wc -l`
+dirh=$dirp/$tema-$numero
+nombre=`ls $dirh | awk /$tema/ | cut -d "." -f1`
+tmpdir=$dirh/tmp
+
+sleep 5
+
+pkill ffmpeg
+
+mkdir -p $tmpdir
+
+# convierte el audio stereo en mono
+ffmpeg -i $dirh/$mic.$aformat -c:v copy -ac 1 $tmpdir/$mic.$aformat
+
+rm $dirh/$mic.$aformat
+
+#mezcla la salida de video y la salida del micrófono
+ffmpeg -i $dirh/$nombre.$vformat -i $tmpdir/$mic.$aformat -c copy \
+	$tmpdir/temp-$nombre.$vout
+
+#corrige el desfase del micrófono
+ffmpeg -i $tmpdir/temp-$nombre.$vout -itsoffset 00:00:02.2 \
+	-i $tmpdir/temp-$nombre.$vout -map 0:a -map 1:v -c copy \
+	$dirp/$tema-$numero.$vout
+
+rm $tmpdir/temp-$nombre.$vout
+
+#mezcla el audio interno con el video
+#ffmpeg -i $tmpdir/$nombre.$vout -i $dirh/interno.$aformat -async 250 \
+#	-filter_complex "[0:a]volume=2.4,amix" -map 0:v -map 0:a -map 1:a \
+#	$dirp/$tema-$numero.$vout
+
+wait
+
+ffplay -fs -x 990 -y 720 -alwaysontop -autoexit $dirp/$tema-$numero.$vout

@@ -1,0 +1,37 @@
+#!/bin/bash/
+
+echo "\\version \"$(echo $(lilypond -v) | awk '{print $3}')\"" > main.ly
+echo "" >> main.ly
+echo -e '\include "modules/melody.ly"
+\include "modules/harmony.ly"
+
+\score{
+  \\new Staff{
+
+  }
+  \layout{}
+}
+' >> main.ly
+
+echo "NAME = $(pwd | awk -F "/" '/^\// {print $NF}')" > makefile
+echo "LYC = lilypond" >> makefile
+echo "MAIN = main.ly" >> makefile
+echo "DEPNDS = \${MAIN}" >> makefile
+echo "FLAGS = -l WARNING -o \${NAME}" >> makefile
+echo "CMD = mkdir out && \${LYC} \${FLAGS} \${MAIN} 2> out/info.log" >> makefile
+echo "" >> makefile
+echo "\${NAME}: \${DEPNDS}" >> makefile
+echo -e '\t${CMD}' >> makefile
+echo "" >> makefile
+echo "clean:" >> makefile
+echo -e '\trm -rf *.pdf out' >> makefile
+
+mkdir -p modules
+touch modules/{melody.ly,harmony.ly}
+
+echo "# LilyPond $(pwd | awk -F "/" '/^\// {print $NF}')" > README.md
+
+echo "/out/" > .gitignore
+
+git init
+git branch -m main
